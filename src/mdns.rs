@@ -1,7 +1,7 @@
 use crate::{Error, Response};
 
 use std::{io, net::Ipv4Addr};
-
+use log::{trace};
 use async_stream::try_stream;
 use futures_core::Stream;
 use net2;
@@ -25,7 +25,7 @@ pub fn mdns_interface(
     let socket = create_socket()?;
     let socket = UdpSocket::from_std(socket)?;
 
-    socket.set_multicast_loop_v4(false)?;
+    socket.set_multicast_loop_v4(true)?;
     socket.join_multicast_v4(MULTICAST_ADDR, interface_addr)?;
 
     let (recv, send) = socket.split();
@@ -73,6 +73,9 @@ impl mDNSSender {
             dns_parser::QueryType::PTR,
             dns_parser::QueryClass::IN,
         );
+
+        //trace!("Sending question {}",self.service_name);
+
         let packet_data = builder.build().unwrap();
 
         let addr = SocketAddr::new(MULTICAST_ADDR.into(), MULTICAST_PORT);
