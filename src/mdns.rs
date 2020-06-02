@@ -73,7 +73,6 @@ impl mDNSSender {
             dns_parser::QueryClass::IN,
         );
 
-        log::trace!("Sending question {}",self.service_name);
 
         let packet_data = builder.build().unwrap_or(vec![]);
 
@@ -97,12 +96,11 @@ impl mDNSListener {
         try_stream! {
             loop {
                 let (count, _) = self.recv.recv_from(&mut self.recv_buffer).await?;
-                log::trace!("recv {}",count);
 
                 if count > 0 {
                     match dns_parser::Packet::parse(&self.recv_buffer[..count]) {
                         Ok(raw_packet) => yield Response::from_packet(&raw_packet),
-                        Err(e) => log::error!("{}, {:?}", e, &self.recv_buffer[..count])
+                        Err(e) => {}
                     }
                 }
             }
