@@ -1,7 +1,6 @@
 use crate::{Error, Response};
 
 use std::{io, net::Ipv4Addr};
-use log::{trace};
 use async_stream::try_stream;
 use futures_core::Stream;
 use net2;
@@ -74,13 +73,14 @@ impl mDNSSender {
             dns_parser::QueryClass::IN,
         );
 
-        //trace!("Sending question {}",self.service_name);
+        log::trace!("Sending question {}",self.service_name);
 
-        let packet_data = builder.build().unwrap();
+        let packet_data = builder.build().unwrap_or(vec![]);
 
         let addr = SocketAddr::new(MULTICAST_ADDR.into(), MULTICAST_PORT);
 
         self.send.send_to(&packet_data, &addr).await?;
+
         Ok(())
     }
 }
@@ -97,11 +97,12 @@ impl mDNSListener {
         try_stream! {
             loop {
                 let (count, _) = self.recv.recv_from(&mut self.recv_buffer).await?;
+                log::trace!("recv {}",count);
 
                 if count > 0 {
                     match dns_parser::Packet::parse(&self.recv_buffer[..count]) {
                         Ok(raw_packet) => yield Response::from_packet(&raw_packet),
-                        Err(e) => eprintln!("{}, {:?}", e, &self.recv_buffer[..count])
+                        Err(e) => log::error!("{}, {:?}", e, &self.recv_buffer[..count])
                     }
                 }
             }
